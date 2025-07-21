@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Web AR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .ar-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .ar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 1.5rem;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .marker-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border: 4px dashed rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                opacity: 0.7;
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1.05);
+            }
+            100% {
+                opacity: 0.7;
+                transform: translate(-50%, -50%) scale(0.95);
+            }
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-900 to-purple-900 min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex flex-col items-center mb-8">
+            <div class="flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mb-4">
+                <i class="fas fa-cube text-2xl text-white"></i>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold text-center mb-2">LYN AR</h1>
+            <p class="text-white/80 text-center max-w-md">WELCOME TO VISUAL 4D AUGMENTED REALITY </p>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="flex flex-col items-center">
+            <!-- AR View Container -->
+            <div class="w-full max-w-2xl aspect-square bg-black/30 rounded-xl mb-8 relative ar-container">
+                <!-- Video feed will be here -->
+                <div id="ar-view" class="w-full h-full flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="loading-spinner mb-4 mx-auto"></div>
+                        <p class="text-white/80">Menyiapkan kamera...</p>
+                    </div>
+                </div>
+                
+                <!-- Overlay elements -->
+                <div class="ar-overlay">
+                    <div class="flex justify-between w-full">
+                        <button id="toggle-camera" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 pointer-events-auto transition-all">
+                            <i class="fas fa-camera-rotate text-xl"></i>
+                        </button>
+                        <button id="toggle-flash" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 pointer-events-auto transition-all">
+                            <i class="fas fa-bolt text-xl"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="marker-guide pulse-animation">
+                        <i class="fas fa-qrcode text-4xl text-white/70"></i>
+                    </div>
+                    
+                    <div class="flex justify-center space-x-4">
+                        <button id="record-btn" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 pointer-events-auto transition-all">
+                            <i class="fas fa-video text-xl"></i>
+                        </button>
+                        <button id="capture-btn" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 pointer-events-auto transition-all">
+                            <i class="fas fa-camera text-xl"></i>
+                        </button>
+                        <div id="share-options" class="hidden bg-white/20 backdrop-blur-sm rounded-full p-3 pointer-events-auto">
+                            <i class="fas fa-share-nodes text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Share Options Dropdown -->
+                <div id="share-dropdown" class="hidden absolute bottom-20 right-4 bg-white/20 backdrop-blur-sm rounded-xl p-2 z-20">
+                    <div class="flex flex-col space-y-2">
+                        <button class="share-btn flex items-center px-4 py-2 rounded-lg hover:bg-white/30 transition-all" data-platform="instagram">
+                            <i class="fab fa-instagram mr-2 text-xl"></i> Instagram
+                        </button>
+                        <button class="share-btn flex items-center px-4 py-2 rounded-lg hover:bg-white/30 transition-all" data-platform="whatsapp">
+                            <i class="fab fa-whatsapp mr-2 text-xl"></i> WhatsApp
+                        </button>
+                        <button class="share-btn flex items-center px-4 py-2 rounded-lg hover:bg-white/30 transition-all" data-platform="facebook">
+                            <i class="fab fa-facebook mr-2 text-xl"></i> Facebook
+                        </button>
+                        <button class="share-btn flex items-center px-4 py-2 rounded-lg hover:bg-white/30 transition-all" data-platform="download">
+                            <i class="fas fa-download mr-2 text-xl"></i> Save to Device
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Instructions -->
+            <div class="bg-white/10 backdrop-blur-sm p-6 rounded-xl w-full max-w-2xl mb-8">
+                <h2 class="text-xl font-semibold mb-4 flex items-center">
+                    <i class="fas fa-info-circle mr-2"></i> Petunjuk Penggunaan
+                </h2>
+                <ol class="list-decimal list-inside space-y-2 text-white/90">
+                    <li>Izinkan akses kamera saat diminta</li>
+                    <li>Arahkan kamera ke marker AR yang valid</li>
+                    <li>Posisikan marker di dalam area panduan</li>
+                    <li>Objek 3D akan muncul secara otomatis</li>
+                    <li>Gunakan tombol di atas untuk kontrol tambahan</li>
+                </ol>
+            </div>
+            
+        </main>
+        
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-white/60 text-sm">
+            <p>© 2025 Aplikasi Web ini di buat oleh GG Gambar Gerak. dengan <i class="fas fa-heart text-red-400"></i> untuk pengalaman AR yang menarik.</p>
+            <p class="mt-1">Kunjungi <a href="https://arlyn.vercel.app/" class="text-indigo-300 hover:text-indigo-200 underline">arlyn.vercel.app</a> untuk info lebih lanjut</p>
+        </footer>
+    </div>
+
+    <script>
+        // Simulate AR functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mock camera initialization
+            setTimeout(() => {
+                const arView = document.getElementById('ar-view');
+                arView.innerHTML = `
+                    <div class="w-full h-full bg-black relative">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="text-center">
+                                <i class="fas fa-qrcode text-6xl text-white/30 mb-4"></i>
+                                <p class="text-white/70">Arahkan kamera ke marker AR</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }, 2000);
+            
+            // Toggle camera button
+            document.getElementById('toggle-camera').addEventListener('click', function() {
+                alert('Fitur toggle kamera akan diaktifkan di sini');
+            });
+            
+            // Toggle flash button
+            document.getElementById('toggle-flash').addEventListener('click', function() {
+                alert('Fitur flash akan diaktifkan di sini');
+            });
+            
+            // Capture button
+            document.getElementById('capture-btn').addEventListener('click', function() {
+                alert('Fitur capture screenshot akan diaktifkan di sini');
+            });
+            
+            // Add animation to marker guide
+            const markerGuide = document.querySelector('.marker-guide');
+            setInterval(() => {
+                markerGuide.classList.toggle('pulse-animation');
+            }, 4000);
+            
+            // Record button functionality
+            const recordBtn = document.getElementById('record-btn');
+            let isRecording = false;
+            let mediaRecorder;
+            let recordedChunks = [];
+            
+            recordBtn.addEventListener('click', async function() {
+                if (!isRecording) {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        mediaRecorder = new MediaRecorder(stream);
+                        mediaRecorder.ondataavailable = (e) => recordedChunks.push(e.data);
+                        mediaRecorder.onstop = () => {
+                            const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+                            recordedChunks = [];
+                            // Here you can handle the recorded video blob
+                            console.log('Recording saved:', blob);
+                        };
+                        mediaRecorder.start();
+                        isRecording = true;
+                        recordBtn.innerHTML = '<i class="fas fa-stop text-xl"></i>';
+                    } catch (err) {
+                        console.error('Error accessing camera:', err);
+                    }
+                } else {
+                    mediaRecorder.stop();
+                    isRecording = false;
+                    recordBtn.innerHTML = '<i class="fas fa-video text-xl"></i>';
+                }
+            });
+            
+            // Share functionality
+            const shareOptions = document.getElementById('share-options');
+            const shareDropdown = document.getElementById('share-dropdown');
+            
+            shareOptions.addEventListener('click', () => {
+                shareDropdown.classList.toggle('hidden');
+            });
+            
+            document.querySelectorAll('.share-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const platform = this.getAttribute('data-platform');
+                    if (platform === 'download') {
+                        // Mock download functionality
+                        const link = document.createElement('a');
+                        link.href = '#'; // Replace with actual media URL
+                        link.download = 'ar-capture.jpg';
+                        link.click();
+                    } else {
+                        // Mock social sharing (in real app would use respective SDKs)
+                        alert(`Sharing to ${platform} would be implemented here`);
+                    }
+                    shareDropdown.classList.add('hidden');
+                });
+            });
+            
+            // Hide dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!shareOptions.contains(e.target) && !shareDropdown.contains(e.target)) {
+                    shareDropdown.classList.add('hidden');
+                }
+            });
+        });
+    </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=ichasnaja/arlyn" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p></body>
+</html>
