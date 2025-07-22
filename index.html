@@ -106,6 +106,10 @@
                 
                 <!-- Overlay elements -->
                 <div class="ar-overlay">
+                    <div id="camera-status" class="absolute top-4 left-4 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1 text-xs flex items-center">
+                        <i class="fas fa-circle text-green-400 mr-1"></i>
+                        <span>Kamera Aktif</span>
+                    </div>
                     <div class="flex justify-between w-full">
                         <button id="toggle-camera" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-full p-3 pointer-events-auto transition-all">
                             <i class="fas fa-camera-rotate text-xl"></i>
@@ -186,14 +190,20 @@
                 const camera = new ZapparThree.Camera();
                 const renderer = new ZapparThree.WebGLRenderer({ antialias: true });
                 renderer.setSize(arView.offsetWidth, arView.offsetHeight);
+                arView.innerHTML = '';
                 arView.appendChild(renderer.domElement);
                 
                 // Request camera permission
                 await ZapparThree.permissionRequest();
                 
                 // Initialize camera
-                camera.start();
+                await camera.start();
                 scene.background = camera.backgroundTexture;
+                
+                // Add camera source selector
+                const cameraSource = new ZapparThree.CameraSource();
+                cameraSource.start();
+                camera.source = cameraSource;
                 
                 // Create marker tracker
                 const markerTracker = new ZapparThree.ImageTrackerLoader().load('https://assets.zappar.com/presence-tracking/example-tracking-image.zpt');
@@ -220,7 +230,20 @@
                 
             } catch (err) {
                 console.error('AR initialization failed:', err);
-                arView.innerHTML = '<p class="text-red-400">Gagal mengakses kamera. Pastikan izin kamera diberikan.</p>';
+                arView.innerHTML = `
+                    <div class="text-center p-4">
+                        <i class="fas fa-camera-slash text-4xl text-red-400 mb-2"></i>
+                        <p class="text-red-400 font-medium">Gagal mengakses kamera</p>
+                        <p class="text-white/80 text-sm mt-1">Pastikan izin kamera diberikan dan perangkat mendukung AR</p>
+                        <button id="retry-camera" class="mt-4 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all">
+                            <i class="fas fa-sync-alt mr-2"></i>Coba Lagi
+                        </button>
+                    </div>
+                `;
+                
+                document.getElementById('retry-camera').addEventListener('click', () => {
+                    location.reload();
+                });
             }
             
             // Toggle camera button
