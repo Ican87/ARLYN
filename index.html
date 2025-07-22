@@ -185,6 +185,12 @@
             arView.innerHTML = '<div class="loading-spinner mb-4 mx-auto"></div><p class="text-white/80">Menyiapkan kamera...</p>';
             
             try {
+                // First request camera permission explicitly
+                const permission = await ZapparThree.permissionRequest();
+                if (!permission) {
+                    throw new Error('Camera permission denied');
+                }
+
                 // Create Three.js scene
                 const scene = new THREE.Scene();
                 const camera = new ZapparThree.Camera();
@@ -193,16 +199,13 @@
                 arView.innerHTML = '';
                 arView.appendChild(renderer.domElement);
                 
-                // Request camera permission
-                await ZapparThree.permissionRequest();
-                
-                // Initialize camera
-                await camera.start();
+                // Initialize camera with user-facing default
+                await camera.start(true); // true for user-facing camera
                 scene.background = camera.backgroundTexture;
                 
-                // Add camera source selector
+                // Set up camera source
                 const cameraSource = new ZapparThree.CameraSource();
-                cameraSource.start();
+                await cameraSource.start();
                 camera.source = cameraSource;
                 
                 // Create marker tracker
@@ -230,19 +233,41 @@
                 
             } catch (err) {
                 console.error('AR initialization failed:', err);
+                let errorMessage = 'Gagal mengakses kamera';
+                let instructions = 'Pastikan izin kamera diberikan dan perangkat mendukung AR';
+                
+                if (err.message.includes('permission denied')) {
+                    errorMessage = 'Izin kamera ditolak';
+                    instructions = 'Silakan refresh halaman dan berikan izin kamera saat diminta';
+                } else if (err.message.includes('not supported')) {
+                    errorMessage = 'Perangkat tidak mendukung';
+                    instructions = 'Browser atau perangkat Anda mungkin tidak mendukung fitur AR';
+                }
+                
                 arView.innerHTML = `
                     <div class="text-center p-4">
                         <i class="fas fa-camera-slash text-4xl text-red-400 mb-2"></i>
-                        <p class="text-red-400 font-medium">Gagal mengakses kamera</p>
-                        <p class="text-white/80 text-sm mt-1">Pastikan izin kamera diberikan dan perangkat mendukung AR</p>
+                        <p class="text-red-400 font-medium">${errorMessage}</p>
+                        <p class="text-white/80 text-sm mt-1">${instructions}</p>
                         <button id="retry-camera" class="mt-4 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all">
                             <i class="fas fa-sync-alt mr-2"></i>Coba Lagi
+                        </button>
+                        <button id="open-settings" class="mt-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-all">
+                            <i class="fas fa-cog mr-2"></i>Buka Pengaturan
                         </button>
                     </div>
                 `;
                 
                 document.getElementById('retry-camera').addEventListener('click', () => {
                     location.reload();
+                });
+                
+                document.getElementById('open-settings').addEventListener('click', () => {
+                    // This will open browser settings on some devices
+                    if (navigator.permissions) {
+                        navigator.permissions.revoke({name: 'camera'});
+                    }
+                    alert('Silakan buka pengaturan browser Anda dan aktifkan izin kamera');
                 });
             }
             
